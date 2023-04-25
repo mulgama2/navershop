@@ -160,6 +160,27 @@ public class CategoryLoader {
 		return null;
 	}
 
+
+	/**
+	 * 말단 노드 선택
+	 * @param target
+	 * @param result
+	 */
+	public void findLeafNode(final JSONArray target, final JSONArray result) {
+		for (int i = 0; i < target.size(); i++) {
+			JSONObject obj = target.getJSONObject(i);
+			System.out.println(obj);
+			if (obj.get("categories") == null) { // 말단인경우
+				result.add(obj);
+			} else {
+				JSONArray child = obj.getJSONArray("categories");
+				if (child.isEmpty()) result.add(obj);
+				else findLeafNode(child, result);
+			}
+		}
+	}
+
+
 	/**
 	 * 주어진 카테고리 아이디에서 바로 한단계 하위 카테고리 목록 조회
 	 * 
@@ -168,9 +189,17 @@ public class CategoryLoader {
 	 */
 	public List<Category> getCategoryByChild(final String catId) {
 		List<Category> result = new ArrayList<>();
-		JSONArray categories = null;
-		if (Common.isOrEquals(catId, "ROOT", "")) categories = cagegory;
-		else categories = findCategory(cagegory, catId).getJSONArray("categories");
+		JSONArray categories = new JSONArray();
+		if (Common.isOrEquals(catId, "ROOT", "")) categories = cagegory; // 선택하지 않은 경우 전체 카테고리
+		else {
+			JSONObject selectedObj = findCategory(cagegory, catId);
+			JSONArray selectedChild = selectedObj.getJSONArray("categories");
+			if (selectedChild == null) { // 선택한 카테고리가 말단인 경우
+				categories.add(selectedObj);
+			} else { // 선택한 카테고리의 하위 카테고리가 있는 경우
+				findLeafNode(selectedChild, categories);
+			}
+		}
 
 		for (int i = 0; i < categories.size(); i++) {
 			JSONObject obj = categories.getJSONObject(i);

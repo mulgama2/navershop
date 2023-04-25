@@ -102,6 +102,13 @@ public class App extends JFrame implements Serializable {
 
 		categoryLoader = new CategoryLoader();
 		categoryLoader.readJsonFile();
+		
+//		카테고리 선택 테스트
+//		List<Category> temps = categoryLoader.getCategoryByChild("50000205");
+//		for (Category cat : temps) {
+//			System.out.println(cat.getCatLv() + " " + cat.getCatId() + " " + cat.getCatNm());
+//		}
+
 		guiDesign();
 		initMessage();
 		pack();

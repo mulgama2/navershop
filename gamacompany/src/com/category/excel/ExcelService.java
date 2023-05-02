@@ -52,24 +52,23 @@ public class ExcelService {
 			List<Category> categorys = getCategorys();
 			LogPanel.append("2. 데이터 추출 시작 (추출 카테고리 : " + categorys.size() + ")");
 			
-			
-			
 			for (int x = 0; x < categorys.size(); x++) {
 				Category category = categorys.get(x);
 				Map<String, String> param = getParam(category.getCatId());
-				LogPanel.append(String.format("   %s > %s", category.getCatNm(), HttpAPI.getUrl(HttpAPI.SHOPPING_URL, param)));
-
-				JSONArray result = HttpAPI.getCategoryByShoppingResult(param);
-				for (int i = 0; i < result.size(); i++) {
-					JSONObject obj = result.getJSONObject(i);
-					writer.add(parserData(obj, ++num));
-				}
-				
-				setProgress("쇼핑 사이트 내용 추출", Common.rate(categorys.size(), (x + 1)));
+				int pagingIndex = Integer.parseInt(param.get("pagingIndex"));
+				for (int j = 0; j < pagingIndex ; j++) {
+					param.put("pagingIndex", "" + (j+1));
+					LogPanel.append(String.format("   %s > %s", category.getCatNm(), HttpAPI.getUrl(HttpAPI.SHOPPING_URL, param)));
+					
+					JSONArray result = HttpAPI.getCategoryByShoppingResult(param);
+					for (int i = 0; i < result.size(); i++) {
+						JSONObject obj = result.getJSONObject(i);
+						writer.add(parserData(obj, ++num));
+					}
+					
+					setProgress("쇼핑 사이트 내용 추출", Common.rate(categorys.size(), (x + 1)));
+				} 
 			}
-			
-			
-			
 			
 			LogPanel.append("3. 데이터 추출 진행 결과 : " + num + "건");
 			LogPanel.append("-----------------------------------------------------------------");
@@ -148,7 +147,7 @@ public class ExcelService {
 		param.put("frm", "NVSHCAT");
 		param.put("isOpened", "true");
 		param.put("origQuery", "");
-		param.put("pagingIndex", "1");
+		param.put("pagingIndex", getPagingVal());
 		param.put("pagingSize", "40");
 		param.put("productSet", getSalesTypeVal());
 		param.put("query", "review");
@@ -159,6 +158,20 @@ public class ExcelService {
 	}
 
 	public List<Object> parserData(final JSONObject obj, final int num) {
+		Object url;
+		if(Common.isNotEmpty(obj.get("mallProductUrl"))) url= obj.get("mallProductUrl");
+		else if(Common.isNotEmpty(obj.get("adcrUrl"))) url = obj.get("adcrUrl");
+		else url = obj.get("crUrlMore");
+		
+		JSONObject info = new JSONObject();
+		try {
+			if(url.toString().contains("smartstore.naver.com")) {
+				info = HttpAPI.getDetailInfo(HttpAPI.getDetailPage(url.toString()));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		List<Object> data = new ArrayList<>();
 		data.add(num);
 		data.add(obj.get("category1Name"));
@@ -182,18 +195,6 @@ public class ExcelService {
 		data.add(obj.get("productTitle")); // 상품명
 		data.add(obj.get("price")); // 상품가격
 		data.add(obj.get("openDate").toString().substring(0, 8)); // 등록일
-		
-		Object url;
-		if(Common.isNotEmpty(obj.get("mallProductUrl"))) url= obj.get("mallProductUrl");
-		else if(Common.isNotEmpty(obj.get("adcrUrl"))) url = obj.get("adcrUrl");
-		else url = obj.get("crUrlMore");
-		
-		JSONObject info = new JSONObject();
-		try {
-			info = HttpAPI.getDetailInfo(HttpAPI.getDetailPage(url.toString()));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		
 		if(url.toString().contains("smartstore.naver.com") && info != null) {
 			data.add(info.get("cnt7"));
@@ -221,9 +222,8 @@ public class ExcelService {
 			data.add("");
 			data.add("");
 		}
-	
 		
-		data.add(url); //상품 url
+		data.add(url.toString().contains("smartstore.naver.com") ? url : ""); //상품 url
 		
 		//if (Common.isEquals(obj.get("categoryLevel"), "1")) data.add(obj.get("category1Id"));
 		//else if (Common.isEquals(obj.get("categoryLevel"), "2")) data.add(obj.get("category2Id"));
@@ -286,7 +286,7 @@ public class ExcelService {
 	 */
 	private String getSalesTypeVal() {
 		if (frame.salesTypeRadioButton.isSelected()) return "total";
-		else if (frame.salesTypeRadioLocal.isSelected()) return "???";
+		//else if (frame.salesTypeRadioLocal.isSelected()) return "korea";
 		else if (frame.salesTypeRadioOverseas.isSelected()) return "overseas";
 		else return "total";
 	}
@@ -304,6 +304,14 @@ public class ExcelService {
 		else if (frame.sortTypeRadioLikeReview.isSelected()) return "review_rel";
 		else if (frame.sortTypeRadioLatest.isSelected()) return "date";
 		else return "rel";
+	}
+	
+	private String getPagingVal() {
+		if (frame.pagingRadio1.isSelected()) return "1";
+		else if (frame.pagingRadio2.isSelected()) return "2";
+		else if (frame.pagingRadio3.isSelected()) return "3";
+		else if (frame.pagingRadio4.isSelected()) return "4";
+		else return "5";
 	}
 
 	public void setProgress(final String msg, final int rate) {

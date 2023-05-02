@@ -5,8 +5,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -49,7 +47,7 @@ public class HttpAPI {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			sleep(); //비정상적인 요청 감지로 중간중간 쉬는 시간을 가짐
+			//sleep(); //비정상적인 요청 감지로 중간중간 쉬는 시간을 가짐
 		}
 		return null;
 	}
@@ -79,7 +77,7 @@ public class HttpAPI {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			sleep(); //비정상적인 요청 감지로 중간중간 쉬는 시간을 가짐
+			//sleep(); //비정상적인 요청 감지로 중간중간 쉬는 시간을 가짐
 		}
 		return null;
 	}
@@ -166,7 +164,7 @@ public class HttpAPI {
 	
 	public static void sleep() {
 		try {
-			Thread.sleep(500);
+			Thread.sleep(50);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
@@ -194,57 +192,14 @@ public class HttpAPI {
 	
 	
 
-	public static void main(String[] args) {
-		
-		//String str = "\"premiumReviewCount\":232},\"productDeliveryLeadTimes\":[{\"rangeNumberText\":\"1\",\"rangeText\":\"일 이내\",\"leadTimeCount\":89,\"leadTimePercent\":26},{\"rangeNumberText\":\"2\",\"rangeText\":\"일 이내\",\"leadTimeCount\":133,\"leadTimePercent\":40},{\"rangeNumberText\":\"3\",\"rangeText\":\"일 이내\",\"leadTimeCount\":33,\"leadTimePercent\":10},{\"rangeNumberText\":\"4\",\"rangeText\":\"일 이상\",\"leadTimeCount\":81,\"leadTimePercent\":24}],\"sellerDeliveryLeadTimes\":[{\"rangeNumberText\":\"1\",\"rangeText\":\"일 이내\",\"leadTimeCount\":217,\"leadTimePercent\":27},{\"rangeNumberText\":\"2\",\"rangeText\":\"일 이내\",\"leadTimeCount\":319,\"leadTimePercent\":39},{\"rangeNumberText\":\"3\",\"rangeText\":\"일 이내\",\"leadTimeCount\":84,\"leadTimePercent\":10},{\"rangeNumberText\":\"4\",\"rangeText\":\"일 이상\",\"leadTimeCount\":192,\"leadTimePercent\":24}],\"averageDeliveryLeadTime\":{\"productAverageDeliveryLeadTime\":2.6964285,\"sellerAverageDeliveryLeadTime\":2.6687193},";
-		
-		
-		//Pattern pattern = Pattern.compile("\"productDeliveryLeadTimes\".+]");
-
-		//Matcher matcher = pattern.matcher(str);
-
-		//while (matcher.find()) {
-		//    System.out.println(matcher.group(0));
-		//    if (matcher.group(0) == null) break;
-		//}
-		
-		
-		Document doc;
-		try {
-			doc = Jsoup.connect("https://brand.naver.com/nubizio/products/489108149")
-					.timeout(5000)
-					.header("referer", REFERER_URL)
-					.header("logic", LOGIC)
-					.header("sbth", SBTH)
-					.header("accept", ACCEPT)
-					.header("accept-encoding", ACCEPT_ENCODING)
-					.header("accept-language", ACCEPT_LANGUAGE)
-					.userAgent(USER_AGENT).ignoreContentType(true)
-			        .post();
-			
-			Pattern pattern = Pattern.compile("\"productDeliveryLeadTimes\".+\"leadTimePercent\":.+}]");
-
-			Matcher matcher = pattern.matcher(doc.toString());
-
-			while (matcher.find()) {
-			    System.out.println(matcher.group(0));
-			    if (matcher.group(0) == null) break;
-			}
-			
-			//System.out.println(doc);
-			//String str = doc.getElementsByTag("script").get(0).toString();
-			
-			//System.out.println(str);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public static void main(String[] args) throws IOException {
 		
 
 		//System.out.println(getDetailPage("https://smartstore.naver.com/kapoka1/products/4867811517"));
 		
 		//System.out.println(getDetailPage("https://smartstore.naver.com/kapoka1/products/4867811517"));
 		
+		System.out.println(getDetailPage("https://smartstore.naver.com/springeyewear/products/5607985195"));
 		/*
 		 * try { getDetailInfo(getDetailPage(
 		 * "https://smartstore.naver.com/main/products/8165121740")); } catch (Exception

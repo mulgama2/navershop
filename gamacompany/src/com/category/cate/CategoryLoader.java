@@ -58,7 +58,7 @@ public class CategoryLoader {
 		LogPanel.append("-----------------------------------------------------------------");
 		LogPanel.append("※ 전체 카테고리 정보를 로드하는 중 입니다.");
 		//try (InputStream in = App.class.getResourceAsStream("./resource/category.json");) {
-		try (InputStream in = App.class.getResourceAsStream("./resource/category.json");) {
+		try (InputStream in = App.class.getResourceAsStream("resource/category.json");) {
 			String jsonStr = IOUtils.toString(in, "UTF-8");
 			cagegory = JSONArray.fromObject(jsonStr);
 			for (int i = 0; i < cagegory.size(); i++) {

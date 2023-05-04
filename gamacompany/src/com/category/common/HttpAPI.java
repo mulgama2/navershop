@@ -30,6 +30,7 @@ public class HttpAPI {
 	public static JSONObject getObject(final String url, final Map<String, String> param) {
 		return Common.toJSONObject(get(url, param));
 	}
+	
 
 	public static String get(final String url, final Map<String, String> param) {
 		try {
@@ -191,15 +192,49 @@ public class HttpAPI {
 	}
 	
 	
+	public static boolean login(final String loginId, final String loginPw) {
+		Map<String, String> param = new HashMap<>();
+		param.put("callAjaxType", "M");
+		param.put("path", "com.Login");
+		param.put("mode", "login");
+		param.put("userId", loginId);
+		param.put("userPw", Common.sha256(loginPw));
+		System.out.println(param);
+		JSONObject obj = Common.toJSONObject(get("http://jjsalsa1.cafe24.com/call", param));
+		return obj.getBoolean("success");
+	}
+	
+	
+	public static String getEndDate(final String loginId) {
+		Map<String, String> param = new HashMap<>();
+		param.put("callAjaxType", "Q");
+		param.put("dbType", "mysql");
+		param.put("queryId", "getStaffList");
+		param.put("searchArea", "I");
+		param.put("searchStr", "mulgama");
+		JSONObject obj = Common.toJSONObject(get("http://jjsalsa1.cafe24.com/call", param));
+		JSONArray data = obj.getJSONArray("data");
+		if (data.size() > 0) {
+			return Common.nvl(data.getJSONObject(0).get("END_DT"));
+		}
+		return null;
+	}
 
 	public static void main(String[] args) throws IOException {
-		
-
+		Map<String, String> param = new HashMap<>();
+		param.put("callAjaxType", "M");
+		param.put("path", "com.Login");
+		param.put("mode", "login");
+		param.put("userId", "mulgama");
+		param.put("userPw", Common.sha256("jjsalsa1!"));
+		System.out.println(param);
+		JSONObject obj = Common.toJSONObject(get("http://jjsalsa1.cafe24.com/call", param));
+		System.out.println(obj.get("success"));
 		//System.out.println(getDetailPage("https://smartstore.naver.com/kapoka1/products/4867811517"));
 		
 		//System.out.println(getDetailPage("https://smartstore.naver.com/kapoka1/products/4867811517"));
 		
-		System.out.println(getDetailPage("https://smartstore.naver.com/springeyewear/products/5607985195"));
+		//System.out.println(getDetailPage("https://smartstore.naver.com/springeyewear/products/5607985195"));
 		/*
 		 * try { getDetailInfo(getDetailPage(
 		 * "https://smartstore.naver.com/main/products/8165121740")); } catch (Exception

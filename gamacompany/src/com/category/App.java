@@ -47,7 +47,7 @@ import com.category.log.LogPanel;
 import com.category.progress.Progress;
 
 public class App extends JFrame implements Serializable {
-	
+
 	public static final String TITLE = "가마 Company - 쇼핑 사이트 분석";
 
 	private static App frame;
@@ -64,24 +64,26 @@ public class App extends JFrame implements Serializable {
 	private JComboBox<Object> comboBoxLv3 = new JComboBox<>();
 	private JComboBox<Object> comboBoxLv4 = new JComboBox<>();
 	private CategoryLoader categoryLoader;
-	
+
 	public JRadioButton salesTypeRadioButton = new JRadioButton("전체유형");
-	//public JRadioButton salesTypeRadioLocal = new JRadioButton("국내상품");
+	// public JRadioButton salesTypeRadioLocal = new JRadioButton("국내상품");
 	public JRadioButton salesTypeRadioOverseas = new JRadioButton("해외직구");
-	
+
 	public JRadioButton sortTypeRadioRank = new JRadioButton("네이버 랭킹순");
 	public JRadioButton sortTypeRadioLowPrice = new JRadioButton("낮은 가격순");
 	public JRadioButton sortTypeRadioHighPrice = new JRadioButton("높은 가격순");
 	public JRadioButton sortTypeRadioHighReview = new JRadioButton("리뷰 많은순");
 	public JRadioButton sortTypeRadioLikeReview = new JRadioButton("리뷰 좋은순");
 	public JRadioButton sortTypeRadioLatest = new JRadioButton("등록일순");
-	
+
 	public JRadioButton pagingRadio1 = new JRadioButton("1");
 	public JRadioButton pagingRadio2 = new JRadioButton("2");
 	public JRadioButton pagingRadio3 = new JRadioButton("3");
 	public JRadioButton pagingRadio4 = new JRadioButton("4");
 	public JRadioButton pagingRadio5 = new JRadioButton("5");
-	
+
+	public static JButton executeLabel;
+
 	/**
 	 * Create the frame.
 	 */
@@ -108,7 +110,7 @@ public class App extends JFrame implements Serializable {
 
 		categoryLoader = new CategoryLoader();
 		categoryLoader.readJsonFile();
-		
+
 //		카테고리 선택 테스트
 //		List<Category> temps = categoryLoader.getCategoryByChild("50000205");
 //		for (Category cat : temps) {
@@ -261,7 +263,7 @@ public class App extends JFrame implements Serializable {
 		});
 		return comboBoxLv4;
 	}
-	
+
 	/**
 	 * GUI Design
 	 */
@@ -293,12 +295,12 @@ public class App extends JFrame implements Serializable {
 
 		ButtonGroup salesTypeGroup = new ButtonGroup();
 		salesTypeGroup.add(salesTypeRadioButton);
-		//salesTypeGroup.add(salesTypeRadioLocal);
+		// salesTypeGroup.add(salesTypeRadioLocal);
 		salesTypeGroup.add(salesTypeRadioOverseas);
 		salesTypeRadioButton.setSelected(true);
 
 		searchPanel2.add(salesTypeRadioButton);
-		//searchPanel2.add(salesTypeRadioLocal);
+		// searchPanel2.add(salesTypeRadioLocal);
 		searchPanel2.add(salesTypeRadioOverseas);
 
 		FlowLayout fl_searchPanel3 = new FlowLayout(FlowLayout.LEFT);
@@ -308,7 +310,7 @@ public class App extends JFrame implements Serializable {
 		JLabel sortTypeLabel = new JLabel("정렬순서");
 		sortTypeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, RIGHT_MARGIN)); // 오른쪽 여백 설정
 		searchPanel3.add(sortTypeLabel);
-		
+
 		ButtonGroup sortTypeGroup = new ButtonGroup();
 		sortTypeGroup.add(sortTypeRadioRank);
 		sortTypeGroup.add(sortTypeRadioLowPrice);
@@ -324,15 +326,15 @@ public class App extends JFrame implements Serializable {
 		searchPanel3.add(sortTypeRadioHighReview);
 		searchPanel3.add(sortTypeRadioLikeReview);
 		searchPanel3.add(sortTypeRadioLatest);
-		
+
 		FlowLayout fl_searchPanel4 = new FlowLayout(FlowLayout.LEFT);
 		fl_searchPanel4.setVgap(0);
 		JPanel searchPanel4 = new JPanel(fl_searchPanel4);
-		
+
 		JLabel pagingTypeLabel = new JLabel("페이지수");
 		pagingTypeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, RIGHT_MARGIN)); // 오른쪽 여백 설정
 		searchPanel4.add(pagingTypeLabel);
-		
+
 		ButtonGroup pagingTypeGroup = new ButtonGroup();
 		pagingTypeGroup.add(pagingRadio1);
 		pagingTypeGroup.add(pagingRadio2);
@@ -346,12 +348,13 @@ public class App extends JFrame implements Serializable {
 		searchPanel4.add(pagingRadio3);
 		searchPanel4.add(pagingRadio4);
 		searchPanel4.add(pagingRadio5);
-		
+
 		JPanel executePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-		JButton executeLabel = new JButton("엑셀 내려받기");
+		executeLabel = new JButton("엑셀 내려받기");
 		executeLabel.setPreferredSize(new Dimension(200, 35));
 		executeLabel.setFont(new Font("굴림", Font.PLAIN, 15));
 		executeLabel.setIcon(new ImageIcon(App.class.getResource("/com/category/resource/excel_icon.png")));
+		executeLabel.setEnabled(false);
 		executePanel.add(executeLabel);
 		excelBtn(executeLabel);
 
@@ -415,8 +418,7 @@ public class App extends JFrame implements Serializable {
 			}
 		});
 	}
-	
-	
+
 	private String getSelectedCategoryId() {
 		Category combo1 = (Category) comboBox.getSelectedItem();
 		Category combo2 = (Category) comboBoxLv2.getSelectedItem();

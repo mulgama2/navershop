@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.SwingConstants;
 
 import com.category.about.About;
+import com.category.login.Login;
 
 public class MenuBar {
 
@@ -18,6 +19,21 @@ public class MenuBar {
 
 		JMenu mnFile = new JMenu("File    ");
 		jMenuBar.add(mnFile);
+		
+		
+		JMenuItem mntmLogin = new JMenuItem("로그인    ");
+		mntmLogin.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Login dialog = new Login();
+				dialog.setResizable(false);
+				dialog.init();
+				dialog.setVisible(true);
+			}
+		});
+		mntmLogin.setHorizontalAlignment(SwingConstants.LEFT);
+		mnFile.add(mntmLogin);
+		
 
 		JMenuItem mntmExit = new JMenuItem("종료    ");
 		mntmExit.addActionListener(new ActionListener() {

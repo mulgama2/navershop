@@ -2,6 +2,7 @@ package com.category.common;
 
 import java.io.File;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.RandomStringUtils;
 
 import net.sf.json.JSON;
@@ -192,5 +193,16 @@ public class Common {
 	
 	public static int rate(final int fullNumber, final int partialNumber) {
 		return Math.round((float) partialNumber / fullNumber * 100); // 백분율 계산식, Math.round()를 사용하여 반올림
+	}
+	
+	
+	public static String sha256(String data) {
+		String result = null;
+		try {
+			result = DigestUtils.sha256Hex(data);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return result;
 	}
 }

@@ -43,7 +43,6 @@ public class LogPanel {
 			final String message = String.format("[%s] | %s", DateUtil.getCurrentTime(), s);
 			Document doc = logText.getDocument();
 			doc.insertString(doc.getLength(), message + "\r\n", null);
-			System.out.println(message);
 			logText.setCaretPosition(logText.getDocument().getLength());
 		} catch (BadLocationException exc) {
 			exc.printStackTrace();

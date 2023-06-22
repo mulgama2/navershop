@@ -21,6 +21,7 @@ public class CategoryLoader {
 	private List<Category> category2;
 	private List<Category> category3;
 	private List<Category> category4;
+	private LogPanel logPanel;
 
 	public CategoryLoader() {
 		categoryAll = new ArrayList<>();
@@ -28,6 +29,7 @@ public class CategoryLoader {
 		category2 = new ArrayList<>();
 		category3 = new ArrayList<>();
 		category4 = new ArrayList<>();
+		logPanel = new LogPanel();
 	}
 
 	public List<Category> getCatetoryAll() {
@@ -55,10 +57,10 @@ public class CategoryLoader {
 	 * 
 	 */
 	public void readJsonFile() {
-		LogPanel.append("-----------------------------------------------------------------");
-		LogPanel.append("※ 전체 카테고리 정보를 로드하는 중 입니다.");
-		//try (InputStream in = App.class.getResourceAsStream("./resource/category.json");) {
+		logPanel.append("-----------------------------------------------------------------");
+		logPanel.append("※ 전체 카테고리 정보를 로드하는 중 입니다.");
 		try (InputStream in = App.class.getResourceAsStream("resource/category.json");) {
+		//try (InputStream in = App.class.getResourceAsStream("resource/category_mulgama.json");) {
 			String jsonStr = IOUtils.toString(in, "UTF-8");
 			cagegory = JSONArray.fromObject(jsonStr);
 			for (int i = 0; i < cagegory.size(); i++) {
@@ -129,13 +131,13 @@ public class CategoryLoader {
 			categoryAll.addAll(category3);
 			categoryAll.addAll(category4);
 			
-			LogPanel.append("1. 전체 카테고리 : " + categoryAll.size() + "건");
-			LogPanel.append("2. 대분류 카테고리 : " + category1.size() + "건");
-			LogPanel.append("3. 중분류 카테고리 : " + category2.size() + "건");
-			LogPanel.append("4. 소분류 카테고리 : " + category3.size() + "건");
-			LogPanel.append("5. 세분류 카테고리 : " + category4.size() + "건");
-			LogPanel.append("6. 카테고리 정보 로드 완료");
-			LogPanel.append("-----------------------------------------------------------------");
+			logPanel.append("1. 전체 카테고리 : " + categoryAll.size() + "건");
+			logPanel.append("2. 대분류 카테고리 : " + category1.size() + "건");
+			logPanel.append("3. 중분류 카테고리 : " + category2.size() + "건");
+			logPanel.append("4. 소분류 카테고리 : " + category3.size() + "건");
+			logPanel.append("5. 세분류 카테고리 : " + category4.size() + "건");
+			logPanel.append("6. 카테고리 정보 로드 완료");
+			logPanel.append("-----------------------------------------------------------------");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -146,7 +148,7 @@ public class CategoryLoader {
 		loader.readJsonFile();
 		//System.out.println(loader.findCategory(loader.cagegory, "50001487"));
 		
-		System.out.println(loader.getCategoryByChildrenOnlyLeaf("50000008"));
+		//System.out.println(loader.getCategoryByChildrenOnlyLeaf("50000008"));
 	}
 
 	public JSONObject findCategory(JSONArray findCategory, final String catId) {

@@ -1,5 +1,7 @@
 package com.category.excel;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -7,12 +9,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 
 import com.category.App;
 import com.category.cate.Category;
-import com.category.cate.CategoryLoader;
 import com.category.common.Common;
 import com.category.common.HttpAPI;
 import com.category.log.LogPanel;
@@ -25,106 +27,144 @@ public class ExcelService {
 
 	private App frame;
 	private File file;
-	private CategoryLoader categoryLoader;
-	private String catId;
+	private List<Category> categorys;
 	private JProgressBar progressBar;
 	private Thread progressThread;
-
-	public ExcelService(final App frame, final File file, CategoryLoader categoryLoader, final String catId, JProgressBar progressBar) {
+	
+	
+	public ExcelService(final App frame, final File file, final List<Category> categorys, JProgressBar progressBar) {
 		this.frame = frame;
 		this.file = file;
-		this.categoryLoader = categoryLoader;
-		this.catId = catId;
+		this.categorys = categorys;
 		this.progressBar = progressBar;
 	}
 	
-	
-	
-	
-	public void run() {
-		ExcelWriter writer = null;
-		try {
-			writer = new ExcelWriter(new FileOutputStream(file));
-			writer.init();
-
-			createHeader(writer);
-			int num = 0;
-			List<Category> categorys = getCategorys();
-			LogPanel.append("2. 데이터 추출 시작 (추출 카테고리 : " + categorys.size() + ")");
-			
-			for (int x = 0; x < categorys.size(); x++) {
-				Category category = categorys.get(x);
-				Map<String, String> param = getParam(category.getCatId());
-				int pagingIndex = Integer.parseInt(param.get("pagingIndex"));
-				for (int j = 0; j < pagingIndex ; j++) {
-					param.put("pagingIndex", "" + (j+1));
-					LogPanel.append(String.format("   %s > %s", category.getCatNm(), HttpAPI.getUrl(HttpAPI.SHOPPING_URL, param)));
-					
-					JSONArray result = HttpAPI.getCategoryByShoppingResult(param);
-					for (int i = 0; i < result.size(); i++) {
-						JSONObject obj = result.getJSONObject(i);
-						writer.add(parserData(obj, ++num));
-					}
-					
-					setProgress("쇼핑 사이트 내용 추출", Common.rate(categorys.size(), (x + 1)));
-				} 
-			}
-			
-			LogPanel.append("3. 데이터 추출 진행 결과 : " + num + "건");
-			LogPanel.append("-----------------------------------------------------------------");
-			setProgress("쇼핑 사이트 내용 추출 완료", 0);
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		} finally {
-			if (writer != null) writer.close();
-
-			JOptionPane.showMessageDialog(null, "다운로드가 완료 되었습니다.");
-		}
-	}
-	
-	
-	
-	
-	
-	
-
-	/*
-	public void run() {
-		ExcelWriter writer = null;
-		try {
-			writer = new ExcelWriter(new FileOutputStream(file));
-			writer.init();
-
-			createHeader(writer);
-			int num = 0;
-			List<Category> categorys = getCategorys();
-			LogPanel.append("2. 데이터 추출 시작 (추출 카테고리 : " + categorys.size() + ")");
-			for (int x = 0; x < categorys.size(); x++) {
-				Category category = categorys.get(x);
-				Map<String, String> param = getParam(category.getCatId());
-				LogPanel.append(String.format("   %s > %s", category.getCatNm(), HttpAPI.getUrl(HttpAPI.SHOPPING_URL, param)));
-
-				//writer.createNewSheet(category.getCatNm().replaceAll("/","_"));
-				JSONArray result = HttpAPI.getCategoryByShoppingResult(param);
-				for (int i = 0; i < result.size(); i++) {
-					JSONObject obj = result.getJSONObject(i);
-					writer.add(parserData(obj, ++num));
+	public void stopBtn(JButton button, ExcelWriter writer) {
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(HttpAPI.exitFlag) return;
+				if (JOptionPane.showConfirmDialog(null, "수집을 끝내시겠습니까?", "히트스캐너",
+						JOptionPane.YES_NO_OPTION) == 0) {
+					HttpAPI.exitFlag = true;
+					App.stopLabel.setEnabled(false);
+					LogPanel.append("-----------------------------------------------------------------");
+					LogPanel.append("수집 종료 중입니다.");
+					LogPanel.append("다운로드 완료 알림창이 나타날 때까지 잠시 기다려주세요.");
+					LogPanel.append("-----------------------------------------------------------------");
 				}
-				
-				setProgress("쇼핑 사이트 내용 추출", Common.rate(categorys.size(), (x + 1)));
 			}
+		});
+	}
+	
+	public void run() {
+		ExcelWriter writer = null;
+		App.executeLabel.setText("수집 중...");
+		App.executeLabel.setEnabled(false);
+		App.stopLabel.setEnabled(true);
+		
+		try {
+			writer = new ExcelWriter(new FileOutputStream(file));
+			writer.init();
+			
+			stopBtn(App.stopLabel, writer);
+
+			createHeader(writer);
+			int num = 0;
+			
+			if(this.frame.collectTypeRadioCategory.isSelected()) {
+				LogPanel.append("2. 데이터 추출 시작 (추출 카테고리 : " + this.categorys.size() + ")");
+				
+				Loop1:
+				for (int x = 0; x < this.categorys.size(); x++) {
+					Category category = this.categorys.get(x);
+					Map<String, String> param = getParam(category.getCatId());
+					String p = param.get("pagingIndex");
+					int pagingIndex = 0;
+					int a = 0;
+					int b = 0;
+					int cnt = 0;
+					if(!Common.isOrEquals(p, "1","2","3","4","5")) {
+						String[] s = p.split(",");
+						a = Integer.parseInt(s[0]) - 1;
+						b = Integer.parseInt(s[1]);
+						pagingIndex = Integer.parseInt(s[1]) - Integer.parseInt(s[0]) + 1;
+					} else {
+						a = 0;
+						b = Integer.parseInt(p);
+						pagingIndex = b;
+					}
+					for (int j = a; j < b ; j++) {
+						if(HttpAPI.exitFlag) break Loop1;
+						param.put("pagingIndex", "" + (j+1));
+						LogPanel.append(String.format("   %s\t\t\t[%s]", category.getCatNm(), (j+1)+"페이지"));
+						
+						
+						JSONArray result = HttpAPI.getCategoryByShoppingResult(param);
+						if(result == null) continue;
+						for (int i = 0; i < result.size(); i++) {
+							JSONObject obj = result.getJSONObject(i);
+							writer.add(parserData(obj, ++num));
+						}
+						setProgress("쇼핑 사이트 내용 추출", Common.rate((x+1), pagingIndex, (cnt+1), (this.categorys.size()*pagingIndex)));
+						cnt++;
+					}
+				}
+			} else if(this.frame.collectTypeRadioKeyword.isSelected()) {
+				String keyword = this.frame.keywordField.getText();
+				
+				LogPanel.append("2. 데이터 추출 시작 (추출 키워드 : " + keyword + ")");
+				
+				Map<String, String> param = getParamKeyword(keyword);
+				String p = param.get("pagingIndex");
+				int pagingIndex = 0;
+				int a = 0;
+				int b = 0;
+				int cnt = 0;
+				if(!Common.isOrEquals(p, "1","2","3","4","5")) {
+					String[] s = p.split(",");
+					a = Integer.parseInt(s[0]) - 1;
+					b = Integer.parseInt(s[1]);
+					pagingIndex = Integer.parseInt(s[1]) - Integer.parseInt(s[0]) + 1;
+				} else {
+					a = 0;
+					b = Integer.parseInt(p);
+					pagingIndex = b;
+				}
+				Loop1:
+				for (int j = a; j < b ; j++) {
+					if(HttpAPI.exitFlag) break Loop1;
+					param.put("pagingIndex", "" + (j+1));
+					LogPanel.append(String.format("   %s\t\t\t[%s]", keyword, (j+1)+"페이지"));
+					
+					JSONArray result = HttpAPI.getKeywordByShoppingResult(param);
+					for (int i = 0; i < result.size(); i++) {
+						JSONObject obj = Common.toJSONObject(result.getJSONObject(i).get("item"));
+						if(Common.nvl(obj.get("adcrUrl")).equals("")) {
+							writer.add(parserData(obj, ++num));
+						}
+					}
+					setProgress("쇼핑 사이트 내용 추출", Common.rateKeyword((j+1), pagingIndex));
+					cnt++;
+				}
+			}
+			
 			LogPanel.append("3. 데이터 추출 진행 결과 : " + num + "건");
-			LogPanel.append("-----------------------------------------------------------------");
-			setProgress("쇼핑 사이트 내용 추출 완료", 0);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		} finally {
 			if (writer != null) writer.close();
-
+			LogPanel.append("-----------------------------------------------------------------");
+			LogPanel.append("수집이 완료 되었습니다.");
+			LogPanel.append("-----------------------------------------------------------------");
+			setProgress("쇼핑 사이트 내용 추출 완료", 0);
 			JOptionPane.showMessageDialog(null, "다운로드가 완료 되었습니다.");
+			HttpAPI.exitFlag = false;
+			App.executeLabel.setEnabled(true);
+			App.stopLabel.setEnabled(false);
+			App.executeLabel.setText("엑셀 내려받기");
 		}
 	}
-	*/
 
 	/**
 	 * 추출에 필요한 카테고리 선정 현재는 선택한 카테고리 아이디에서 바로 하위 카테고리의 내용만 추출
@@ -132,10 +172,11 @@ public class ExcelService {
 	 * 
 	 * @return
 	 */
+	/*
 	public List<Category> getCategorys() {
 		return categoryLoader.getCategoryByChild(catId);
 	}
-
+*/
 	/**
 	 * 쇼핑 사이트 검색을 위한 파라미터 값 추출
 	 * 
@@ -156,7 +197,24 @@ public class ExcelService {
 		param.put("timestamp", "");
 		return param;
 	}
-
+	
+	/**
+	 * 쇼핑 사이트 검색을 위한 파라미터 값 추출
+	 * 
+	 * @return
+	 */
+	public Map<String, String> getParamKeyword(String query) {
+		Map<String, String> param = new HashMap<>();
+		param.put("pagingIndex", getPagingVal());
+		param.put("pagingSize", "40");
+		param.put("productSet", getSalesTypeVal());
+		param.put("query", query);
+		param.put("sort", getSortVal());
+		param.put("viewType", "list");
+		param.put("timestamp", "");
+		return param;
+	}
+	
 	public List<Object> parserData(final JSONObject obj, final int num) {
 		Object url;
 		if(Common.isNotEmpty(obj.get("mallProductUrl"))) url= obj.get("mallProductUrl");
@@ -166,8 +224,9 @@ public class ExcelService {
 		JSONObject info = new JSONObject();
 		try {
 			if(url.toString().contains("smartstore.naver.com")) {
-				info = HttpAPI.getDetailInfo(HttpAPI.getDetailPage(url.toString()));
-			}
+				JSONObject json = HttpAPI.getDetailPage(url.toString());
+				if(json != null) info = HttpAPI.getDetailInfo(json);
+			} else info = null;
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -192,12 +251,13 @@ public class ExcelService {
 		else if(Common.isEquals(grade, "M44006")) data.add("씨앗");
 		else data.add("");
 		
+		//data.add(obj.get("imageUrl")); //이미지
 		data.add(obj.get("productTitle")); // 상품명
 		data.add(obj.get("price")); // 상품가격
 		data.add(obj.get("openDate").toString().substring(0, 8)); // 등록일
 		
-		if(url.toString().contains("smartstore.naver.com") && info != null) {
-			data.add(info.get("cnt7"));
+		if(url.toString().contains("smartstore.naver.com") && (info != null)) {
+			data.add(Common.nvz(info.get("cnt7")));
 		} else data.add(0);
 		//7일 판매량
 		
@@ -211,12 +271,27 @@ public class ExcelService {
 		else data.add(""); // 판매유형
 		
 		
-		if(url.toString().contains("smartstore.naver.com") && info != null) {
-			data.add(info.get("tag").toString()); // 상품 태그
-			data.add(info.get("pageTitle").toString()); // page title 태그
-			data.add(info.get("metaTag").toString()); // 메타 태그
-			data.add(info.get("jejo"));
+		if(url.toString().contains("smartstore.naver.com") && (info != null)) {
+			data.add(Common.nvl(info.get("tag")).toString()); // 상품 태그
+			data.add(Common.nvl(info.get("pageTitle")).toString()); // page title 태그
+			data.add(Common.nvl(info.get("metaTag")).toString()); // 메타 태그
+			String jejo = Common.nvl(info.get("jejo")).toString().toLowerCase();
+			String jejoGroup = "";
+			if(( jejo.contains("국산") && !jejo.contains("미국산") && !jejo.contains("중국산") && !jejo.contains("태국산") && !jejo.contains("영국산") ) || jejo.contains("한국") || jejo.contains("대한민국") || jejo.contains("코리아") || jejo.contains("korea")) {
+				jejoGroup = "국산";
+			} else if(jejo.contains("중국") || jejo.contains("china")) {
+				jejoGroup = "중국";
+			} else if(jejo.contains("일본") || jejo.contains("japan")) {
+				jejoGroup = "일본";
+			} else if(jejo.contains("미국") || jejo.contains("america")) {
+				jejoGroup = "미국";
+			} else if(jejo.contains("유럽") || jejo.contains("europe")) {
+				jejoGroup = "유럽";
+			} else jejoGroup = "기타";
+			data.add(jejoGroup);
+			data.add(Common.nvl(info.get("jejo")));
 		} else {
+			data.add("");
 			data.add("");
 			data.add("");
 			data.add("");
@@ -237,7 +312,7 @@ public class ExcelService {
 
 		return data;
 	}
-
+	
 	/**
 	 * 엑셀 헤더
 	 * 
@@ -255,6 +330,7 @@ public class ExcelService {
 		headers.add("스토어명");
 		headers.add("판매자등급");
 		
+		//headers.add("대표이미지");
 		headers.add("상품명");
 		headers.add("상품가격");
 		headers.add("등록일");
@@ -269,6 +345,7 @@ public class ExcelService {
 		headers.add("Page Title 태그");
 		headers.add("Meta Description 태그");
 		headers.add("제조국");
+		headers.add("상세 제조국");
 		headers.add("상품 url");
 		//headers.add("카테고리ID");
 
@@ -311,7 +388,9 @@ public class ExcelService {
 		else if (frame.pagingRadio2.isSelected()) return "2";
 		else if (frame.pagingRadio3.isSelected()) return "3";
 		else if (frame.pagingRadio4.isSelected()) return "4";
-		else return "5";
+		else if (frame.pagingRadio5.isSelected()) return "5";
+		else if (frame.pagingRadio6.isSelected()) return frame.customPaging.getText() + "," + frame.customPaging2.getText();
+		else return "1";
 	}
 
 	public void setProgress(final String msg, final int rate) {

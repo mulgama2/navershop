@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -26,10 +28,13 @@ import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -39,6 +44,8 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import com.category.about.About;
 import com.category.cate.Category;
 import com.category.cate.CategoryLoader;
+import com.category.common.Common;
+import com.category.common.HttpAPI;
 import com.category.driver.Dirvers;
 import com.category.excel.ExcelService;
 import com.category.file.FileChooser;
@@ -48,7 +55,7 @@ import com.category.progress.Progress;
 
 public class App extends JFrame implements Serializable {
 
-	public static final String TITLE = "가마 Company - 쇼핑 사이트 분석";
+	public static final String TITLE = "히트스캐너 Copyright©.Gama Company. All rights reserved. 무단 복제, 배포는 형사상 법률에 관련해 처벌 받을 수 있습니다.";
 
 	private static App frame;
 	private static final long serialVersionUID = -6487581342941361188L;
@@ -57,6 +64,7 @@ public class App extends JFrame implements Serializable {
 	private JProgressBar progressBar;
 	private Thread progressThread;
 	private static File temp;
+	private static final int LEFT_MARGIN = 30;
 	private static final int RIGHT_MARGIN = 40;
 	private static final String FONT_NAME = "dotum";
 	private JComboBox<Object> comboBox = new JComboBox<>();
@@ -64,6 +72,10 @@ public class App extends JFrame implements Serializable {
 	private JComboBox<Object> comboBoxLv3 = new JComboBox<>();
 	private JComboBox<Object> comboBoxLv4 = new JComboBox<>();
 	private CategoryLoader categoryLoader;
+	
+	public JRadioButton collectTypeRadioCategory = new JRadioButton("카테고리");
+	public JRadioButton collectTypeRadioKeyword = new JRadioButton("키워드");
+	public JTextField keywordField = new JTextField(20);
 
 	public JRadioButton salesTypeRadioButton = new JRadioButton("전체유형");
 	// public JRadioButton salesTypeRadioLocal = new JRadioButton("국내상품");
@@ -81,9 +93,15 @@ public class App extends JFrame implements Serializable {
 	public JRadioButton pagingRadio3 = new JRadioButton("3");
 	public JRadioButton pagingRadio4 = new JRadioButton("4");
 	public JRadioButton pagingRadio5 = new JRadioButton("5");
+	public JRadioButton pagingRadio6 = new JRadioButton("직접입력");
+	public JTextField customPaging = new JTextField(5);
+	public static JLabel waveText = new JLabel("~");
+	public JTextField customPaging2 = new JTextField(5);
 
 	public static JButton executeLabel;
-
+	public static JButton stopLabel;
+	public static JLabel loginLabel;
+	
 	/**
 	 * Create the frame.
 	 */
@@ -110,7 +128,7 @@ public class App extends JFrame implements Serializable {
 
 		categoryLoader = new CategoryLoader();
 		categoryLoader.readJsonFile();
-
+		
 //		카테고리 선택 테스트
 //		List<Category> temps = categoryLoader.getCategoryByChild("50000205");
 //		for (Category cat : temps) {
@@ -269,11 +287,39 @@ public class App extends JFrame implements Serializable {
 	 */
 	private void guiDesign() {
 
+		JPanel connectInfoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		JLabel connectInfoLabel = new JLabel("접속 정보");
+		connectInfoLabel.setFont(new Font(FONT_NAME, Font.BOLD, 14));
+		connectInfoPanel.add(connectInfoLabel);
+		
+		App.loginLabel = new JLabel("로그인 하시기 바랍니다.");
+		App.loginLabel.setBorder(BorderFactory.createEmptyBorder(0, LEFT_MARGIN, 0, 0)); // 왼쪽 여백 설정
+		connectInfoPanel.add(App.loginLabel);
+		
 		JPanel searchTitlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 		JLabel searchTitleLabel = new JLabel("검색 조건");
 		searchTitleLabel.setFont(new Font(FONT_NAME, Font.BOLD, 14));
 		searchTitlePanel.add(searchTitleLabel);
 
+		
+		FlowLayout fl_searchPanel0 = new FlowLayout(FlowLayout.LEFT);
+		fl_searchPanel0.setVgap(0);
+		JPanel searchPanel0 = new JPanel(fl_searchPanel0);
+		JLabel collectTypeLabel = new JLabel("수집방법");
+		collectTypeLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, RIGHT_MARGIN)); // 오른쪽 여백 설정
+		searchPanel0.add(collectTypeLabel);
+		
+		ButtonGroup collectTypeGroup = new ButtonGroup();
+		collectTypeGroup.add(collectTypeRadioCategory);
+		collectTypeGroup.add(collectTypeRadioKeyword);
+		collectTypeRadioCategory.setSelected(true);
+		
+		searchPanel0.add(collectTypeRadioCategory);
+		searchPanel0.add(collectTypeRadioKeyword);
+		searchPanel0.add(keywordField);
+		keywordField.setEnabled(false);
+		
+		
 		FlowLayout fl_searchPanel = new FlowLayout(FlowLayout.LEFT);
 		fl_searchPanel.setVgap(0);
 		JPanel searchPanel = new JPanel(fl_searchPanel);
@@ -341,6 +387,7 @@ public class App extends JFrame implements Serializable {
 		pagingTypeGroup.add(pagingRadio3);
 		pagingTypeGroup.add(pagingRadio4);
 		pagingTypeGroup.add(pagingRadio5);
+		pagingTypeGroup.add(pagingRadio6);
 
 		pagingRadio1.setSelected(true);
 		searchPanel4.add(pagingRadio1);
@@ -348,6 +395,14 @@ public class App extends JFrame implements Serializable {
 		searchPanel4.add(pagingRadio3);
 		searchPanel4.add(pagingRadio4);
 		searchPanel4.add(pagingRadio5);
+		searchPanel4.add(pagingRadio6);
+		searchPanel4.add(customPaging);
+		searchPanel4.add(waveText);
+		searchPanel4.add(customPaging2);
+		customPaging.setEnabled(false);
+		customPaging.setHorizontalAlignment(SwingConstants.RIGHT);
+		customPaging2.setEnabled(false);
+		customPaging2.setHorizontalAlignment(SwingConstants.RIGHT);
 
 		JPanel executePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 		executeLabel = new JButton("엑셀 내려받기");
@@ -357,10 +412,18 @@ public class App extends JFrame implements Serializable {
 		executeLabel.setEnabled(false);
 		executePanel.add(executeLabel);
 		excelBtn(executeLabel);
+		
+		stopLabel = new JButton("수집 끝내기");
+		stopLabel.setPreferredSize(new Dimension(170, 35));
+		stopLabel.setFont(new Font("굴림", Font.PLAIN, 15));
+		stopLabel.setEnabled(false);
+		executePanel.add(stopLabel);
 
 		JPanel searchPanelContainer = new JPanel();
 		searchPanelContainer.setLayout(new BoxLayout(searchPanelContainer, BoxLayout.Y_AXIS));
+		searchPanelContainer.add(connectInfoPanel);
 		searchPanelContainer.add(searchTitlePanel);
+		searchPanelContainer.add(searchPanel0);
 		searchPanelContainer.add(searchPanel);
 		searchPanelContainer.add(searchPanel2);
 		searchPanelContainer.add(searchPanel3);
@@ -385,10 +448,65 @@ public class App extends JFrame implements Serializable {
 		mainPanel.add(progressBar, BorderLayout.PAGE_END);
 
 		getContentPane().add(mainPanel);
-
+		
+		setCollectByCategory(collectTypeRadioCategory);
+		setCollectByKeyword(collectTypeRadioKeyword);
+		
+		setCustomPaging(pagingRadio6);
+		setCustomPaging2(pagingRadio1, pagingRadio2, pagingRadio3, pagingRadio4, pagingRadio5);
 		pack();
 		setLocationRelativeTo(null);
 		setVisible(true);
+		
+		
+	}
+	
+	public void setCollectByCategory(JRadioButton button) {
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				keywordField.setEnabled(false);
+				comboBox.setEnabled(true);
+				comboBoxLv2.setEnabled(true);
+				comboBoxLv3.setEnabled(true);
+				comboBoxLv4.setEnabled(true);
+			}
+		});
+	}
+	
+	public void setCollectByKeyword(JRadioButton button) {
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				keywordField.setEnabled(true);
+				comboBox.setEnabled(false);
+				comboBoxLv2.setEnabled(false);
+				comboBoxLv3.setEnabled(false);
+				comboBoxLv4.setEnabled(false);
+			}
+		});
+	}
+	
+	public void setCustomPaging(JRadioButton button) {
+		button.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				customPaging.setEnabled(true);
+				customPaging2.setEnabled(true);
+			}
+		});
+	}
+	
+	public void setCustomPaging2(JRadioButton... button) {
+		for (int i = 0; i < button.length; i++) {
+			button[i].addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					customPaging.setEnabled(false);
+					customPaging2.setEnabled(false);
+				}
+			});
+		}
 	}
 
 	/**
@@ -400,23 +518,116 @@ public class App extends JFrame implements Serializable {
 		button.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String cate = ((Category) comboBox.getSelectedItem()).toString();
 
-				File file = new FileChooser().fileSaveDlg();
-				if (file == null) return;
-
-				new Thread(new Runnable() {
-					public void run() {
-						LogPanel.append("-----------------------------------------------------------------");
-						LogPanel.append("※ 검색 조건에 해당하는 데이터를 추출하여 엑셀에 데이터 생성을 시작합니다.");
-						LogPanel.append("1. 파일 저장 경로 :" + file.getAbsolutePath());
-
-						setProgress("쇼핑 사이트 분석 진행 시작", 0);
-						new ExcelService(frame, file, categoryLoader, getSelectedCategoryId(), progressBar).run();
+				if(!HttpAPI.checkDate(Integer.parseInt(HttpAPI.getEndDate(HttpAPI.loginId).replaceAll("-", "")))) return;
+				
+				if(frame.collectTypeRadioKeyword.isSelected()) {
+					String str = keywordField.getText();
+					if(str.equals("")) {
+						JOptionPane.showMessageDialog(null, "키워드를 입력해주세요.");
+						return;
 					}
-				}).start();
+				}
+				
+				if(frame.pagingRadio6.isSelected()) {
+					String str = customPaging.getText();
+					String str2 = customPaging2.getText();
+					if(str.equals("") || str2.equals("")) {
+						JOptionPane.showMessageDialog(null, "페이지수 범위를 입력해주세요.");
+						return;
+					}
+					
+					Pattern pattern = Pattern.compile("\\d");
+					Matcher matcher = pattern.matcher(str);
+					if(!matcher.find()) {
+						JOptionPane.showMessageDialog(null, "숫자만 입력해주세요.");
+						return;
+					}
+					
+					if(Integer.parseInt(str) > Integer.parseInt(str2)) {
+						JOptionPane.showMessageDialog(null, "시작페이지 숫자가 종료페이지 숫자보다 클 수 없습니다.");
+						return;
+					}
+					
+					if(!(Integer.parseInt(str) > 0 && Integer.parseInt(str) < 101)) {
+						JOptionPane.showMessageDialog(null, "1~100의 숫자만 입력해주세요.");
+						return;
+					}
+					
+					if(!(Integer.parseInt(str2) > 0 && Integer.parseInt(str2) < 101)) {
+						JOptionPane.showMessageDialog(null, "1~100의 숫자만 입력해주세요.");
+						return;
+					}
+				}
+				
+				List<Category> categorys = categoryLoader.getCategoryByChild(getSelectedCategoryId());
+				String p = getPagingVal();
+				int pagingIndex = 0;
+				if(!Common.isOrEquals(getPagingVal(), "1","2","3","4","5")) {
+					String[] s = p.split(",");
+					pagingIndex = Integer.parseInt(s[1]) - Integer.parseInt(s[0]) + 1;
+				} else pagingIndex = Integer.parseInt(getPagingVal());
+				
+				String expectedTime = "";
+				if(frame.collectTypeRadioCategory.isSelected()) {
+					expectedTime = getTimeStr(categorys.size(), pagingIndex);
+				} else if(frame.collectTypeRadioKeyword.isSelected()) {
+					expectedTime = getTimeStrKeyword(pagingIndex);
+				}
+				if (JOptionPane.showConfirmDialog(null, "수집을 시작하시겠습니까? (예상시간: 약 " + expectedTime + ")", "히트스캐너",
+						JOptionPane.YES_NO_OPTION) == 0) {
+					
+					File file = new FileChooser().fileSaveDlg();
+					if (file == null) return;
+					
+					HttpAPI.SHOPPING_URL = HttpAPI.getApiUrl();
+					HttpAPI.SHOPPING_CATEGORY = HttpAPI.getApiUrl2();
+					HttpAPI.insertLastUseDt(HttpAPI.loginId);
+					
+					new Thread(new Runnable() {
+						public void run() {
+							LogPanel.append("-----------------------------------------------------------------");
+							LogPanel.append("※ 검색 조건에 해당하는 데이터를 추출하여 엑셀에 데이터 생성을 시작합니다.");
+							LogPanel.append("1. 파일 저장 경로 :" + file.getAbsolutePath());
+							
+							setProgress("쇼핑 사이트 분석 진행 시작", 0);
+							new ExcelService(frame, file, categorys, progressBar).run();
+						}
+					}).start();
+				}
+				
+				
 			}
 		});
+	}
+	
+	private String getTimeStr(int cateSize, int pagingIndex) {
+		int time = (int)(cateSize * pagingIndex * 10);
+		return getTimeStr2(time);
+	}
+	
+	private String getTimeStrKeyword(int pagingIndex) {
+		int time = (int)(pagingIndex * 20);
+		return getTimeStr2(time);
+	}
+	
+	private String getTimeStr2(int time) {
+		String timeStr = "";
+		
+		int min = time / 60;
+		int hour = min / 60;
+		int remain_min = min % 60;
+		
+		if(min >= 60) {
+			timeStr = hour + "시간";
+			if(remain_min > 0) timeStr += " " + remain_min + "분";
+		} else {
+			if(min < 1)  timeStr = "1분";
+			else {
+				timeStr = min + "분";
+			}
+		}
+		return timeStr;
 	}
 
 	private String getSelectedCategoryId() {
@@ -441,13 +652,14 @@ public class App extends JFrame implements Serializable {
 		if (progressThread != null) progressThread.interrupt();
 	}
 
-	public static void sleep() {
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-			Thread.currentThread().interrupt();
-		}
+	private String getPagingVal() {
+		if (frame.pagingRadio1.isSelected()) return "1";
+		else if (frame.pagingRadio2.isSelected()) return "2";
+		else if (frame.pagingRadio3.isSelected()) return "3";
+		else if (frame.pagingRadio4.isSelected()) return "4";
+		else if (frame.pagingRadio5.isSelected()) return "5";
+		else if (frame.pagingRadio6.isSelected()) return frame.customPaging.getText() + "," +frame.customPaging2.getText();
+		else return "1";
 	}
 
 	/**
@@ -480,4 +692,5 @@ public class App extends JFrame implements Serializable {
 			LogPanel.append("에러가 발생 하였습니다." + e.getMessage());
 		}
 	}
+	
 }

@@ -191,8 +191,13 @@ public class Common {
 	}
 	
 	
-	public static int rate(final int fullNumber, final int partialNumber) {
-		return Math.round((float) partialNumber / fullNumber * 100); // 백분율 계산식, Math.round()를 사용하여 반올림
+	public static int rate(final int category, final int pagingIndex, final int page, final int totalNumPages) {
+		return Math.round( ( (category - 1) * pagingIndex + page) * 100 / totalNumPages);
+		//return Math.round((float) partialNumber / fullNumber * 100); // 백분율 계산식, Math.round()를 사용하여 반올림
+	}
+	
+	public static int rateKeyword(final int pagingIndex, final int totalNumPages) {
+		return Math.round(((float)pagingIndex / totalNumPages) * 100);
 	}
 	
 	
